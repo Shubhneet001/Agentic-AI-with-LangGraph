@@ -1,4 +1,5 @@
+dotenv
+pydantic
 langgraph
 langchain
 langchain_huggingface
-dotenv
