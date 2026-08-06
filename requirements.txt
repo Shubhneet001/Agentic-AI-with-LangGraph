@@ -3,3 +3,5 @@ pydantic
 langgraph
 langchain
 langchain_huggingface
+langchain_groq
+streamlit
