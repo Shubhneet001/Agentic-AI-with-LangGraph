@@ -1,5 +1,11 @@
 import streamlit as st
-from chatbot_with_UI.backend import llm, chatbot
+from backend import (
+    chatbot,
+    create_thread,
+    llm,
+    retrieve_all_threads,
+    update_thread_title
+)
 from langchain_core.messages import HumanMessage, AIMessage
 import uuid    # for generating multiple random thread IDs
 from datetime import datetime
@@ -10,24 +16,25 @@ from datetime import datetime
 # generates a new random thread ID
 def generate_thread_id():
     thread_id = uuid.uuid4()
-    return thread_id
+    return str(thread_id)
 
 def reset_chat():
     thread_id = generate_thread_id()
     st.session_state['thread_id'] = thread_id
-    add_thread(thread_id)
+    create_thread(thread_id)
+    st.session_state["chat_threads"] = retrieve_all_threads()
     st.session_state['message_history'] = []
 
-def add_thread(thread_id):
-    exists = any(thread['id'] == thread_id for thread in st.session_state['chat_threads'])
-    if not exists:
-        st.session_state['chat_threads'].append(
-            {
-                "id": thread_id,
-                "title": "New Chat",
-                "created_at": datetime.now()
-            }
-        )
+# def add_thread(thread_id):
+#     exists = any(thread['id'] == thread_id for thread in st.session_state['chat_threads'])
+#     if not exists:
+#         st.session_state['chat_threads'].append(
+#             {
+#                 "id": thread_id,
+#                 "title": "New Chat",
+#                 "created_at": datetime.now()
+#             }
+#         )
 
 def load_conversation(thread_id):
     state = chatbot.get_state(config={'configurable': {'thread_id': thread_id}})
@@ -51,11 +58,11 @@ User's first message:
     response = llm.invoke(prompt)
     return response.content.strip()
 
-def update_thread_title(thread_id, title):
-    for thread in st.session_state['chat_threads']:
-        if thread["id"] == thread_id:
-            thread["title"] = title
-            break
+# def update_thread_title(thread_id, title):
+#     for thread in st.session_state['chat_threads']:
+#         if thread["id"] == thread_id:
+#             thread["title"] = title
+#             break
 
 
 # **************************** Session Setup ****************************
@@ -65,11 +72,12 @@ if 'message_history' not in st.session_state:
 
 if 'thread_id' not in st.session_state:
     st.session_state['thread_id'] = generate_thread_id()
+    create_thread(st.session_state["thread_id"])
 
 if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] = []
+    st.session_state['chat_threads'] = retrieve_all_threads()
 
-add_thread(st.session_state['thread_id'])
+# add_thread(st.session_state['thread_id'])
 
 
 # **************************** Sidebar UI ****************************
@@ -81,7 +89,7 @@ if st.sidebar.button('New Chat'):
 
 st.sidebar.header('My Conversations')
 
-for thread in st.session_state['chat_threads'][::-1]:
+for thread in st.session_state['chat_threads']:
     if st.sidebar.button(
         thread["title"],
         key=str(thread["id"])
@@ -123,6 +131,7 @@ if user_input:
     if len(st.session_state['message_history']) == 1:
         title = generate_thread_title(user_input)
         update_thread_title(st.session_state['thread_id'], title)
+        st.session_state["chat_threads"] = retrieve_all_threads()
 
     with st.chat_message('user'):
         st.text(user_input)
