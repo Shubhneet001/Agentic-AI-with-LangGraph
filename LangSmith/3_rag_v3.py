@@ -1,5 +1,3 @@
-# pip install -U langchain langchain-openai langchain-community faiss-cpu pypdf python-dotenv langsmith
-
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
-PDF_PATH = "LangSmith/islr.pdf"  # <- change to your file
+PDF_PATH = "LangSmith/islr.pdf"
 
 # ----------------- helpers (not traced individually) -----------------
 @traceable(name="load_pdf")

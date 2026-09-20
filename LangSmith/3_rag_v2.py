@@ -1,9 +1,7 @@
-# pip install -U langchain langchain-openai langchain-community faiss-cpu pypdf python-dotenv langsmith
-
 import os
 from dotenv import load_dotenv
 
-from langsmith import traceable  # <-- key import
+from langsmith import traceable
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter

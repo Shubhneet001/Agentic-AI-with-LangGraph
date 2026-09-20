@@ -7,14 +7,17 @@ from langgraph.graph.message import add_messages
 from dotenv import load_dotenv
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
+import os
+
+os.environ['LANGCHAIN_PROJECT'] = 'My Chatbot'
 
 load_dotenv()
 
 # LLM Setup
-llm = ChatGroq(model="llama-3.1-8b-instant")
+llm = ChatGroq(model="openai/gpt-oss-20b")
 
 # -------- Database Setup --------
-conn = sqlite3.connect("chatbot.db", check_same_thread=False)
+conn = sqlite3.connect("chatbot.db", check_same_thread=False)      # false to use multiple threads in the same database
 cursor = conn.cursor()
 
 cursor.execute("""
@@ -36,7 +39,6 @@ def chat_node(state: ChatState):
     response = llm.invoke(messages)
     return {'messages': [response]}
 
-# conn = sqlite3.connect(database='chatbot.db', check_same_thread=False)    # false to use multiple threads in the same database
 
 checkpointer = SqliteSaver(conn=conn)
 

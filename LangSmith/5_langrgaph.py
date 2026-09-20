@@ -10,7 +10,8 @@ from langgraph.graph import StateGraph, START, END
 
 # ---------- Setup ----------
 load_dotenv()
-model = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+# model = ChatGroq(model="qwen/qwen3.6-27b", temperature=0)
+model = ChatGroq(model="openai/gpt-oss-20b", temperature=0)
 
 # ---------- Structured schema & model ----------
 class EvaluationSchema(BaseModel):

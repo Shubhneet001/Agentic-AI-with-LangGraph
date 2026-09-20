@@ -121,7 +121,15 @@ for message in st.session_state['message_history']:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
-CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}   # generates a dynamic thread_id instead of generating and naming a thread manually
+# CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}   # generates a dynamic thread_id instead of generating and naming a thread manually
+CONFIG = {
+    "configurable": {"thread_id": st.session_state["thread_id"]},
+    "metadata": {
+        "thread_id": st.session_state["thread_id"]
+    },
+    "run_name": "chat_turn"
+}
+
 user_input = st.chat_input('Type Here')
 
 if user_input:
