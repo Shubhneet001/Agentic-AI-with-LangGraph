@@ -145,12 +145,23 @@ if user_input:
         st.text(user_input)
 
     with st.chat_message('assistant'):
-        ai_message = st.write_stream(
-            message_chunk.content for message_chunk, metadata in chatbot.stream(
-                {'messages': [HumanMessage(content=user_input)]},
-                config = CONFIG,
+        def ai_only_stream():
+            used_tools = set()
+            for message_chunk, metadata in chatbot.stream(
+                {"messages": [HumanMessage(content=user_input)]},
+                config=CONFIG,
                 stream_mode="messages"
-            )
-        )
+            ):
+                if isinstance(message_chunk, AIMessage):
+                    # AI messages contain tools calls when the model requests a tool
+                    for tool_call in message_chunk.tool_calls:
+                        used_tools.add(tool_call["name"])
+                    # yield only ai messages
+                    yield message_chunk.content 
+
+            if used_tools:
+                st.caption("Tools Used: " + ", ".join(sorted(used_tools)))
+
+        ai_message = st.write_stream(ai_only_stream())
 
     st.session_state['message_history'].append({'role':'assistant', 'content':ai_message})

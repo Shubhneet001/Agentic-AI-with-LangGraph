@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_tavily import TavilySearch
 from langchain_core.tools import tool
 
 import sqlite3
@@ -18,13 +18,37 @@ import os
 
 os.environ['LANGCHAIN_PROJECT'] = 'My Chatbot'
 
-load_dotenv()
+
+from pathlib import Path
+
+env_path = Path(__file__).resolve().parent.parent / ".env"
+
+load_dotenv(env_path, override=True)
+
+api_key = os.getenv("GROQ_API_KEY")
+
+if not api_key:
+    raise RuntimeError(
+        f"GROQ_API_KEY not found. Checked: {env_path}"
+    )
+
+print("Groq API key loaded:", bool(api_key))
+print("Groq API key length:", len(api_key))
+
+llm = ChatGroq(
+    model="openai/gpt-oss-20b",
+    api_key=api_key
+)
+
 
 # LLM Setup
-llm = ChatGroq(model="openai/gpt-oss-20b")
+# llm = ChatGroq(model="openai/gpt-oss-20b")
 
 # Tools
-search_tool = DuckDuckGoSearchRun(region="us-en")
+search_tool = TavilySearch(
+    max_results=5,
+    topic="general"
+)
 
 @tool
 def calculator(first_num: float, second_num: float, operation: str) -> dict:
