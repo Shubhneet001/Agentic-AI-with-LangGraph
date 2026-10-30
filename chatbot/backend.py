@@ -42,7 +42,7 @@ llm = ChatGroq(
 
 
 # LLM Setup
-# llm = ChatGroq(model="openai/gpt-oss-20b")
+llm = ChatGroq(model="openai/gpt-oss-20b")
 
 # Tools
 search_tool = TavilySearch(
