@@ -4,7 +4,8 @@ from backend import (
     create_thread,
     llm,
     retrieve_all_threads,
-    update_thread_title
+    update_thread_title,
+    ingest_pdf
 )
 from langchain_core.messages import HumanMessage, AIMessage
 import uuid    # for generating multiple random thread IDs
@@ -24,17 +25,6 @@ def reset_chat():
     create_thread(thread_id)
     st.session_state["chat_threads"] = retrieve_all_threads()
     st.session_state['message_history'] = []
-
-# def add_thread(thread_id):
-#     exists = any(thread['id'] == thread_id for thread in st.session_state['chat_threads'])
-#     if not exists:
-#         st.session_state['chat_threads'].append(
-#             {
-#                 "id": thread_id,
-#                 "title": "New Chat",
-#                 "created_at": datetime.now()
-#             }
-#         )
 
 def load_conversation(thread_id):
     state = chatbot.get_state(config={'configurable': {'thread_id': thread_id}})
@@ -58,12 +48,6 @@ User's first message:
     response = llm.invoke(prompt)
     return response.content.strip()
 
-# def update_thread_title(thread_id, title):
-#     for thread in st.session_state['chat_threads']:
-#         if thread["id"] == thread_id:
-#             thread["title"] = title
-#             break
-
 
 # **************************** Session Setup ****************************
 
@@ -77,7 +61,8 @@ if 'thread_id' not in st.session_state:
 if 'chat_threads' not in st.session_state:
     st.session_state['chat_threads'] = retrieve_all_threads()
 
-# add_thread(st.session_state['thread_id'])
+if "ingested_docs" not in st.session_state:
+    st.session_state["ingested_docs"] = {}
 
 
 # **************************** Sidebar UI ****************************
@@ -87,6 +72,36 @@ st.sidebar.title('LangGraph Chatbot')
 if st.sidebar.button('New Chat'):
     reset_chat()
 
+st.sidebar.divider()
+
+# --- PDF Upload / RAG Section ---
+st.sidebar.header('Document Upload (RAG)')
+uploaded_file = st.sidebar.file_uploader("Upload a PDF to chat with", type=["pdf"])
+
+if uploaded_file is not None:
+    if st.sidebar.button("Process PDF"):
+        with st.spinner("Ingesting document..."):
+            try:
+                file_bytes = uploaded_file.read()
+                result = ingest_pdf(
+                    file_bytes=file_bytes, 
+                    thread_id=st.session_state["thread_id"], 
+                    filename=uploaded_file.name
+                )
+                st.session_state["ingested_docs"][st.session_state["thread_id"]] = result
+                st.sidebar.success("PDF processed successfully!")
+            except Exception as e:
+                st.sidebar.error(f"Error processing PDF: {str(e)}")
+
+# Display active document for the current thread if it exists
+current_doc = st.session_state["ingested_docs"].get(st.session_state["thread_id"])
+if current_doc:
+    st.sidebar.info(f"📄 **Active Document:** {current_doc['filename']}\n\n"
+                    f"*{current_doc['documents']} pages, {current_doc['chunks']} chunks*")
+
+st.sidebar.divider()
+
+# --- Chat History Section ---
 st.sidebar.header('My Conversations')
 
 for thread in st.session_state['chat_threads']:
@@ -121,7 +136,6 @@ for message in st.session_state['message_history']:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
-# CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}   # generates a dynamic thread_id instead of generating and naming a thread manually
 CONFIG = {
     "configurable": {"thread_id": st.session_state["thread_id"]},
     "metadata": {
